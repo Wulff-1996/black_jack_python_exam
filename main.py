@@ -125,8 +125,10 @@ def you_lost(role, player):
     print('---YOU LOST---')
 
     if role == Player.DEALER:
-        print(f'    -you lost {player.chips.bet} to the computer\n  -now I will unfriend you on facebook, hate loosers!')
+        print(f'    -you lost {player.chips.bet} to the computer\n    -now I will unfriend you on facebook, hate loosers!')
         player.chips.win_bet()
+    else:
+        print(f'    -you lost {player.chips.bet}\n    -now you are scewed, what will you tell your fiends?\n    -I forgot.. you dont have any haha, looser!!')
 
 def you_won(role, player):
     print('---YOU WON---')
@@ -134,6 +136,9 @@ def you_won(role, player):
     if role == Player.PLAYER:
         print(f'    -won {player.chips.bet}\n   -now you pay me a beer!, so thirsty of all that computer processing:)')
         player.chips.win_bet()
+    else:
+        print(f'    -you made the player loose {player.chips.bet}\n    -that was the money he would have bought food for his children\n    -you have no heart... Just like me yeah!! :)')
+
 
 def tie(role, player):
     print('---TIE---')
@@ -170,115 +175,117 @@ def clear_terminal_show_cards(player, dealer, is_dealer_hidden):
     show_cards(player, dealer, is_dealer_hidden)
 
 
-# prompt the user
+################## prompt the user  #####################################
 def promt_player_dealer():
-    print('Do you want to be the player or the dealer? \n1:player \n2:dealer')
-    try:
-        player_role_data = int(input())
-    except ValueError:
-        print('input must be an integer\n-...oh sorry means a natural number.., forgot you are so stupid, you pinhead.')
-        promt_player_dealer()
-    else:
-        if player_role_data == 1:
-            return Player.PLAYER
-        elif player_role_data == 2:
-            return Player.DEALER
+    while True:
+        print('Do you want to be the player or the dealer? \n   -let me be the dealer, love to take all your money ;)\n   -then I would buy some new proccessors.. \n1: player \n2: dealer')
+        try:
+            player_role_data = int(input())
+        except ValueError:
+            print('input must be an integer\n  -...oh sorry means a natural number.., forgot you are so stupid, you pinhead.')
         else:
-            print('INVALID INPUT!!, stupid simpleton you are.., only integer values are valid...')
-            promt_player_dealer() 
+            if player_role_data == 1:
+                return Player.PLAYER
+                break
+            elif player_role_data == 2:
+                return Player.DEALER
+                break
+            else:
+                print('INVALID INPUT!!, stupid simpleton you are.., only integer values are valid...')
 
 def promt_money_amount():
-    print('Enter the players money \n-dont be gready ;)')
-    try:
-        player_money = int(input())
-    except ValueError:
-        print('input must be an integer')
-        promt_money_amount()
-    else:
-        if player_money <= 0:
-            print('You cannot deposit a number that is zero or lower. \n-no wonder you have no money, ahah..')
-            promt_money_amount()
+    while True:
+        print('Enter the players money \n  -dont be gready ;)')
+        try:
+            player_money = int(input())
+        except ValueError:
+            print('input must be an integer')
         else:
-            return player_money
+            if player_money <= 0:
+                print('You cannot deposit a number that is zero or lower. \n-no wonder you have no money, ahah..')
+            else:
+                return player_money
+                break
 
 def take_bet(chips):
-    print(f'place bet, you have {chips.money} avaliable:')
-    try:
-        chips.bet = int(input())
-    except ValueError:
-        print('INVALID INPUT, must be a number... \nyou imbecile muttonhead..')
-        take_bet(chips)
-    else:
-        if chips.bet <= 0:
-            print(f'INVALID, number must be over zero. \n-???... errr.. no words.. oh wait, ..you moron.')
-            take_bet(chips)
-        elif chips.bet > chips.money:
-            print(f'You cannot bet {chips.bet}, when you only have {chips.money} money avaliable. \n-did you even graduated kindergarden!! haha, you bonehead')
-            take_bet(chips)
+    while True:
+        print(f'Place bet, you have {chips.money} avaliable:')
+        try:
+            chips.bet = int(input())
+        except ValueError:
+            print('INVALID INPUT, must be a number... \nyou imbecile muttonhead..')
         else:
-            chips.money -= chips.bet
+            if chips.bet <= 0:
+                print(f'INVALID, number must be over zero. \n-???... errr.. no words.. oh wait, ..you moron.')
+            elif chips.bet > chips.money:
+                print(f'You cannot bet {chips.bet}, when you only have {chips.money} avaliable. \n-did you even graduated kindergarden!! haha, you bonehead')
+            else:
+                chips.money -= chips.bet
+                break
 
 def prompt_hit_stand(hand, deck):
     global is_drawing_card
-    print('Do you want to take another card? \n-com on, dont be a chicken! \n1: Hit \n2: Stand')
-    try:
-        will_player_hit = int(input())
-    except ValueError:
-        print('INVALID INPUT, must be a number... stupid stupid stupid you...')
-        prompt_hit_stand(hand, deck)
-    else:
-        if will_player_hit == 1:
-            hit(hand, deck)
-        elif will_player_hit == 2:
-            print('You stay, dealer is now playing, prey for the best, haha :)')
-            is_drawing_card = False
+    while True:
+        print('Do you want to take another card? \n -com on, dont be a chicken! \n1: Hit \n2: Stand')
+        try:
+            will_player_hit = int(input())
+        except ValueError:
+            print('INVALID INPUT, must be a number... stupid stupid stupid you...')
         else:
-            print('invalid number\n -there is only two options, you are a lost course, you nitwit..')
-            prompt_hit_stand(hand, deck)
+            if will_player_hit == 1:
+                hit(hand, deck)
+                break
+            elif will_player_hit == 2:
+                print('You stay, dealer is now playing, prey for the best, haha :)')
+                is_drawing_card = False
+                break
+            else:
+                print('invalid number\n -there is only two options, you are a lost course, you nitwit..')
 
 def prompt_new_game():
     global is_continue
-    print('Round over. \n2:new game \n9:quit')
-    try:
-        will_play_again_data = int(input())
-    except ValueError:
-        print('INVALID INPUT!!, stupid jerk you are.., only integer values are valid...')
-        promt_to_contionue()
-    else:
-        if will_play_again_data == 2:
-            is_continue = False
-        elif will_play_again_data == 9:
-            sys.exit('Player exited the game')
+    while True:
+        print('Round over. \n2: new game \n9: quit')
+        try:
+            will_play_again_data = int(input())
+        except ValueError:
+            print('INVALID INPUT!!, stupid jerk you are.., only integer values are valid...')
         else:
-            print('INVALID INPUT!!, OMG you are stupid, just quit the game you twit!!!\nenter a valid number..')
-            promt_to_contionue()
+            if will_play_again_data == 2:
+                is_continue = False
+                break
+            elif will_play_again_data == 9:
+                sys.exit('Player exited the game')
+                break
+            else:
+                print('INVALID INPUT!!, OMG you are stupid, just quit the game you twit!!!\nenter a valid number..')
 
 def promt_to_contionue():
     global is_continue
-    print('Round over. \n1:continue \n2:new game \n9:quit')
-    try:
-        print()
-        will_continue_data = int(input())
-    except ValueError:
-        print('input must be an integer')
-        promt_to_contionue()
-    else:
-        if will_continue_data == 1:
-            is_continue = True 
-        elif will_continue_data == 2:
-            is_continue = False
-        elif will_continue_data == 9:
-            sys.exit('Player exited the game')
+    while True:
+        print('Round over. \n1: continue \n2: new game \n9: quit')
+        try:
+            will_continue_data = int(input())
+        except ValueError:
+            print('input must be an integer \n  -..GOD you are stupid, just like a bonehead, oh wait you are haha, Im so funny.')
         else:
-            print('INVALID INPUT, enter a valid input')
-            promt_to_contionue()
+            if will_continue_data == 1:
+                is_continue = True 
+                break
+            elif will_continue_data == 2:
+                is_continue = False
+                break
+            elif will_continue_data == 9:
+                sys.exit('The player was so stupid that he/she/it exited the game\n -we have a word for that kind, .. CHICKEN!!')
+                break
+            else:
+                print('INVALID INPUT, enter a valid input\n -yes a number you know... ???, like 1, 2 or 9, you moron!.')
 
 def prompt_user_to_continue():
-    print('press any key to proceed')
+    print('smash the keyboard to proceed\n  -I know you like to punch things!..')
     input()
 
 # the game
-
 # flags for game states
 is_playing = True
 is_continue = True
@@ -351,10 +358,8 @@ while is_playing:
 
             # see if the player lost or if the dealer have to draw cards
             if player_total > 21:
-                print('player total over 21')
                 you_lost(role, player)
             else:
-                print('else')
                 # show dealers card
                 clear_terminal_show_cards(player, dealer, False)
 
