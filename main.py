@@ -161,19 +161,18 @@ def show_cards(player, dealer, is_dealer_hidden):
     print(f'|{dealer.name}: {dealer.role}')
     if is_dealer_hidden:
         print('|    total: ' + str(calcultate_one_card(dealer.hand.cards[1])))
-        print('|    dealer hand: <HIDDEN CARD>, ' + str(dealer.hand.cards[1]))
+        print('|    dealers hand: <HIDDEN CARD>, ' + str(dealer.hand.cards[1]))
     else:
         print('|    total: ' + str(calculate_hand(dealer.hand.cards)))
         print('|    dealers hand: ' + str([str(card) for card in dealer.hand.cards]))
     print( '-------------------------------------------------------------------------------')
 
 def clear_terminal():
-    os.system('cls')
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 def clear_terminal_show_cards(player, dealer, is_dealer_hidden):
     clear_terminal()
     show_cards(player, dealer, is_dealer_hidden)
-
 
 ################## prompt the user  #####################################
 def promt_player_dealer():
