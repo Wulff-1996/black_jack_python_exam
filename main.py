@@ -1,137 +1,430 @@
-from random import shuffle
+import random
+import os
+import sys
 
-# set up the cards
-RANKS = [x for x in range(2, 11)] + ['JACK', 'QUEEN', 'KING', 'ACE']
-COLORS = ['HEARTS', 'SPADES', 'DIAMONDS', 'CLUBS']
+ranks = [x for x in range(2, 11)] + ['JACK', 'QUEEN', 'KING', 'ACE']
+suits = ['DIAMONDS', 'SPADES', 'HEARTS', 'CLUBS']
 
-def create_deck():
-    return [(rank, color) for rank in RANKS for color in COLORS]
+################  Classes  ###########################
+class Card():
+    
+    def __init__(self, rank, suit):
+        self.rank = rank
+        self.suit = suit
 
-def shuffle_deck(deck):
-    shuffle(deck)
+    def __str__(self):
+        return f'{self.rank} 0f {self.suit}'
 
-def get_user_type(is_player):
+class Deck():
+
+    def __init__(self):
+        self.cards = [Card(rank, suit) for rank in ranks for suit in suits]
+
+    def deal(self):
+        return self.cards.pop()
+
+    def clear(self):
+        self.cards.clear()
+
+    def __len__(self):
+        return len(self.cards)
+
+    def __str__(self):
+        deck_string = ''
+        for card in self.cards:
+            deck_string += f'\n{card}'
+        return deck_string
+
+class Hand():
+
+    def __init__(self):
+        self.cards = []
+
+    def add_card(self, card):
+        self.cards.append(card)
+
+    def __str__(self):
+        hand_string = 'hand: '
+        for card in self.cards:
+            hand_string += f'{card}, '
+        return hand_string
+    
+class Chips():
+
+    def __init__(self, money):
+        self.money = money
+        self.bet = 0
+
+    def win_bet(self):
+        self.money += 2*self.bet
+
+    def win_tie(self):
+        self.money += self.bet
+
+    def __str__(self):
+        return f'money: {self.money}, bet: {self.bet}'
+
+class Player():
+    PLAYER = 'PLAYER'
+    DEALER = 'DEALER'
+    YOU = 'YOU'
+    COMPUTER = 'COMPUTER'
+
+    def __init__(self, role, hand, chips, name):
+        self.chips = chips
+        self.hand = hand
+        self.role = role
+        self.name = name      
+
+################### functions  ##########################################
+def computer_take_bet(chips: Chips):
+    if chips.money >= 100:
+        chips.bet = 50
+        chips.money -= 50
+    elif chips.money >= 50 < 100:
+        chips.bet = 25
+        chips.money -= 25
+    elif chips.money > 10 < 50:
+        chips.bet = 5
+        chips.money -= 5
+    else:
+        chips.bet = 1
+        chips.money -= 1
+
+def calculate_hand(cards):
+        total = 0
+        aces = 0
+        for card in cards:
+            if card.rank in range(2, 11):
+                total += card.rank
+            elif card.rank == 'ACE':
+                total += 11
+                aces += 1
+            else:
+                total += 10
+        if total > 21 and aces > 0:
+            for ace in range(aces):
+                if total > 21:
+                    total -= 10
+        return total
+
+def hit(hand: Hand, deck: Deck):
+    hand.add_card(deck.deal())
+    calculate_hand(hand.cards)
+
+def calcultate_one_card(card):
+    if card.rank in range(2, 11):
+        return card.rank
+    elif card.rank == 'ACE':
+        return 11
+    else:
+        return 10
+
+################# functions for handle end of game #####################################
+def you_lost(role, player):
+    print('---YOU LOST---')
+
+    if role == Player.DEALER:
+        print(f'    -you lost {player.chips.bet} to the computer\n  -now I will unfriend you on facebook, hate loosers!')
+        player.chips.win_bet()
+
+def you_won(role, player):
+    print('---YOU WON---')
+
+    if role == Player.PLAYER:
+        print(f'    -won {player.chips.bet}\n   -now you pay me a beer!, so thirsty of all that computer processing:)')
+        player.chips.win_bet()
+
+def tie(role, player):
+    print('---TIE---')
+
+    if role == Player.PLAYER:
+        print(f'    -you won {player.chips.bet} back\n   -you know that you have to win right?.. you Bonehead :|')
+    else:
+        print('    -the computer won its {player.chips.bet}\n   -dont let the computer take all your money, you bastard..')
+    player.chips.win_tie()
+
+################# functions for display in the terminal  ####################################
+def show_cards(player, dealer, is_dealer_hidden):
+    print( '-------------------------------------------------------------------------------')
+    print(f'|{player.name}: {player.role}')
+    print(f'|   money: {player.chips.money}')
+    print(f'|   bet: {player.chips.bet}')
+    print( '|   total: ' + str(calculate_hand(player.hand.cards)))
+    print( '|   players hand: ' + str([str(card) for card in player.hand.cards]))
+    print( '|')
+    print(f'|{dealer.name}: {dealer.role}')
+    if is_dealer_hidden:
+        print('|    total: ' + str(calcultate_one_card(dealer.hand.cards[1])))
+        print('|    dealer hand: <HIDDEN CARD>, ' + str(dealer.hand.cards[1]))
+    else:
+        print('|    total: ' + str(calculate_hand(dealer.hand.cards)))
+        print('|    dealers hand: ' + str([str(card) for card in dealer.hand.cards]))
+    print( '-------------------------------------------------------------------------------')
+
+def clear_terminal():
+    os.system('cls')
+
+def clear_terminal_show_cards(player, dealer, is_dealer_hidden):
+    clear_terminal()
+    show_cards(player, dealer, is_dealer_hidden)
+
+
+# prompt the user
+def promt_player_dealer():
+    print('Do you want to be the player or the dealer? \n1:player \n2:dealer')
     try:
-        user_input = int(input("Do you want to be the player or the dealer? \n1: player \n2: dealer "))
-        if user_input == 1:
-            is_player = True
-        elif user_input == 2:
-            is_player = False
-        else:
-            raise ValueError
+        player_role_data = int(input())
     except ValueError:
-        print('---INVALID INPUT---')
-        get_user_type(is_player)
-
-def calculate_hand(hand):
-    amount_of_aces = 0
-    sum = 0
-    for card in hand:
-        if card[0] in RANKS[0:-4]:
-            sum += card[0]
-        elif card[0] == 'ACE':
-            sum += 11
-            amount_of_aces += 1
+        print('input must be an integer\n-...oh sorry means a natural number.., forgot you are so stupid, you pinhead.')
+        promt_player_dealer()
+    else:
+        if player_role_data == 1:
+            return Player.PLAYER
+        elif player_role_data == 2:
+            return Player.DEALER
         else:
-            sum += 10
-    if amount_of_aces > 0 and sum > 21:
-        for _ in range(amount_of_aces):
-            if sum > 21:
-                sum -= 10
-    return sum
+            print('INVALID INPUT!!, stupid simpleton you are.., only integer values are valid...')
+            promt_player_dealer() 
 
-def print_frame(player_role, player_sum, player_money, bet, player_hand, computer_role, computer_sum, computer_hand):
-    print('---------------------------------------------------')
-    print(f'|YOU: {player_role}')
-    print(f'|cards total value: {player_sum}')
-    print(f'|money: {player_money}')
-    print(f'|bet: {bet}')
-    print(f'|', [f'{x} of {y}' for (x, y) in player_hand])
-    print('|                                                 |')
-    print('|                                                 |')
-    print('|                                                 |')
-    print(f'|COMPUTER: {computer_role}')
-    print(f'|cards total value: {computer_sum}')
-    print(f'|', [f'{x} of {y}' for (x, y) in computer_hand])
-    print('|                                                 |')
-    print('|                                                 |')
-    print('---------------------------------------------------')
-
-def get_bet(player_mon):
+def promt_money_amount():
+    print('Enter the players money \n-dont be gready ;)')
     try:
-        bet = int(input(f'Place bet, you have {player_mon}.'))
-        if bet > 0:
-            return bet
-        else:
-            print('bet must be over 0')
-            get_bet(player_mon)
+        player_money = int(input())
     except ValueError:
-        print('---INVALID INPUT---')
-        get_bet(player_mon)
+        print('input must be an integer')
+        promt_money_amount()
+    else:
+        if player_money <= 0:
+            print('You cannot deposit a number that is zero or lower. \n-no wonder you have no money, ahah..')
+            promt_money_amount()
+        else:
+            return player_money
 
-def print_draw_exstra_card():
-    print('------------------------------------------')
-    print('|    do you want to draw exstra card?    |')
-    print('|    1: YES                              |')
-    print('|    2: NO                               |')
-    print('------------------------------------------')
-
-def get_input(print_func):
-    print_func()
+def take_bet(chips):
+    print(f'place bet, you have {chips.money} avaliable:')
     try:
-        data = int(input())
-        if data == 1:
-            return True
-        elif data == 2:
-            return False
-        else:
-            get_input(print_func)
+        chips.bet = int(input())
     except ValueError:
-        print('INVALID INPUT')
-        get_input(print_func)
+        print('INVALID INPUT, must be a number... \nyou imbecile muttonhead..')
+        take_bet(chips)
+    else:
+        if chips.bet <= 0:
+            print(f'INVALID, number must be over zero. \n-???... errr.. no words.. oh wait, ..you moron.')
+            take_bet(chips)
+        elif chips.bet > chips.money:
+            print(f'You cannot bet {chips.bet}, when you only have {chips.money} money avaliable. \n-did you even graduated kindergarden!! haha, you bonehead')
+            take_bet(chips)
+        else:
+            chips.money -= chips.bet
 
+def prompt_hit_stand(hand, deck):
+    global is_drawing_card
+    print('Do you want to take another card? \n-com on, dont be a chicken! \n1: Hit \n2: Stand')
+    try:
+        will_player_hit = int(input())
+    except ValueError:
+        print('INVALID INPUT, must be a number... stupid stupid stupid you...')
+        prompt_hit_stand(hand, deck)
+    else:
+        if will_player_hit == 1:
+            hit(hand, deck)
+        elif will_player_hit == 2:
+            print('You stay, dealer is now playing, prey for the best, haha :)')
+            is_drawing_card = False
+        else:
+            print('invalid number\n -there is only two options, you are a lost course, you nitwit..')
+            prompt_hit_stand(hand, deck)
 
+def prompt_new_game():
+    global is_continue
+    print('Round over. \n2:new game \n9:quit')
+    try:
+        will_play_again_data = int(input())
+    except ValueError:
+        print('INVALID INPUT!!, stupid jerk you are.., only integer values are valid...')
+        promt_to_contionue()
+    else:
+        if will_play_again_data == 2:
+            is_continue = False
+        elif will_play_again_data == 9:
+            sys.exit('Player exited the game')
+        else:
+            print('INVALID INPUT!!, OMG you are stupid, just quit the game you twit!!!\nenter a valid number..')
+            promt_to_contionue()
 
+def promt_to_contionue():
+    global is_continue
+    print('Round over. \n1:continue \n2:new game \n9:quit')
+    try:
+        print()
+        will_continue_data = int(input())
+    except ValueError:
+        print('input must be an integer')
+        promt_to_contionue()
+    else:
+        if will_continue_data == 1:
+            is_continue = True 
+        elif will_continue_data == 2:
+            is_continue = False
+        elif will_continue_data == 9:
+            sys.exit('Player exited the game')
+        else:
+            print('INVALID INPUT, enter a valid input')
+            promt_to_contionue()
+
+def prompt_user_to_continue():
+    print('press any key to proceed')
+    input()
+
+# the game
+
+# flags for game states
+is_playing = True
+is_continue = True
+is_drawing_card = True
+
+while is_playing:
+    # reset them to true if they were false and started a new game
+    is_continue = True
+    is_drawing_card = True
+    clear_terminal()
+
+    # get if the user is a player or a dealer
+    role = promt_player_dealer()
+    clear_terminal()
+
+    # get the players money
+    money = promt_money_amount()
+    clear_terminal()
+
+    # create the playeres with an empty hand
+    if role == Player.PLAYER:
+        player = Player(Player.PLAYER, Hand(), Chips(money), Player.YOU)
+        dealer = Player(Player.DEALER, Hand(), Chips(0), Player.COMPUTER)
+    else:
+        player = Player(Player.PLAYER, Hand(), Chips(money), Player.COMPUTER)
+        dealer = Player(Player.DEALER, Hand(), Chips(0), Player.YOU)
+
+    # play round while, player money > 0
+    while is_continue:
+        is_drawing_card = True
+
+        # create a deck and shuffle the deck
+        deck = Deck()
+        random.shuffle(deck.cards)
+
+        # get bet for the player
+        if role == Player.PLAYER:
+            clear_terminal()
+            take_bet(player.chips)
+        else:
+            clear_terminal()
+            computer_take_bet(player.chips)
+
+        # clear the hands if they already placed a round
+        player.hand = Hand()
+        dealer.hand = Hand()
+
+        # deal starting hand
+        player.hand.add_card(deck.deal())
+        player.hand.add_card(deck.deal())
+        dealer.hand.add_card(deck.deal())
+        dealer.hand.add_card(deck.deal())
+
+        # game logic for when the user is the player
+        if role == Player.PLAYER:
+
+            # show starting hand
+            clear_terminal_show_cards(player, dealer, True)
+
+            # deal cards until the player stops
+            while is_drawing_card == True and calculate_hand(player.hand.cards) < 21:
+                prompt_hit_stand(player.hand, deck)
+                clear_terminal_show_cards(player, dealer, True)
+            
+            # if drawing was cancelled by 21 set it to false
+            is_drawing_card = False
+            
+            # calculate totals for player
+            player_total = calculate_hand(player.hand.cards)
+
+            # see if the player lost or if the dealer have to draw cards
+            if player_total > 21:
+                print('player total over 21')
+                you_lost(role, player)
+            else:
+                print('else')
+                # show dealers card
+                clear_terminal_show_cards(player, dealer, False)
+
+                # dealers turn
+                while calculate_hand(dealer.hand.cards) < 17:
+                    hit(dealer.hand, deck)
+                    clear_terminal_show_cards(player, dealer, False)
+                
+                dealer_total = calculate_hand(dealer.hand.cards)
+
+                # calculate who wins
+                if dealer_total > 21:
+                    you_won(role, player)
+                elif dealer_total < player_total:
+                    you_won(role, player)
+                elif dealer_total == player_total:
+                    tie(role, player)
+                else:
+                    you_lost(role, player)
         
-def game():
-    player_money = 100
-    bet = 0
-    is_player = True
-    player_role = 'PLAYER'
-    computer_role = 'DEALER'
-    player_hand = []
-    computer_hand = []
-    player_sum = 0
-    computer_sum = 0
+        # game when user is the dealer           
+        else:
+            dealer_total = calcultate_one_card(dealer.hand.cards[1])
+            
+            # logic for computer to hit
+            computer_is_playing = True
+            while computer_is_playing:
+                clear_terminal_show_cards(player, dealer, True)
+                prompt_user_to_continue()
 
-    deck = create_deck()
-    shuffle_deck(deck)
+                player_total = calculate_hand(player.hand.cards)
+                if player_total <= 11:
+                    hit(player.hand, deck)
+                elif dealer_total >= 10 and player_total <= 17:
+                    hit(player.hand, deck)
+                elif dealer_total < 10 and player_total <= 15:
+                    hit(player.hand, deck)
+                else:
+                    break
 
-    get_user_type(is_player)
+            # calculate totals for player
+            player_total = calculate_hand(player.hand.cards)
 
-    if is_player == False:
-        player_role = 'DEALER'
-        computer_role = 'PLAYER'
+            # see if the player lost or the dealer have to play
+            if player_total > 21:
+                you_won(role, player)
+            else:
+                clear_terminal_show_cards(player, dealer, False)
+                prompt_user_to_continue()
 
-    bet = get_bet(player_money)
-    player_money -= bet
+                # dealers turn
+                while calculate_hand(dealer.hand.cards) < 17:
+                    hit(dealer.hand, deck)
+                    clear_terminal_show_cards(player, dealer, False)
+                    prompt_user_to_continue()
+                
+                dealer_total = calculate_hand(dealer.hand.cards)
 
-    while player_money > 0:
-        player_hand = [deck.pop(), deck.pop()]
-        computer_hand = [deck.pop(), deck.pop()]
-        
-        player_sum = calculate_hand(player_hand)
-        computer_sum = calculate_hand(computer_hand)
+                if dealer_total > 21:
+                    you_lost(role, player)
+                elif dealer_total < player_total:
+                    you_lost(role, player)
+                elif dealer_total == player_total:
+                    tie(role, player)
+                else:
+                    you_won(role, player)
 
-        print_frame(player_role, player_sum, player_money, bet, player_hand, computer_role, computer_sum, computer_hand)
-        
-        if player_role == 'PLAYER':
-            while get_input(print_draw_exstra_card) == True:
-                player_hand.append(deck.pop())
-                player_sum = calculate_hand(player_hand)
-                print_frame(player_role, player_sum, player_money, bet, player_hand, computer_role, computer_sum, computer_hand)
-        break
-        
-
-
-game()
+        # promt for continue, new game or quit
+        if player.chips.money <= 0:
+            is_continue = False
+            prompt_new_game()
+        else:
+            promt_to_contionue()
